@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang=en>
+<meta charset=UTF-8>
+<meta content="width=device-width,initial-scale=1" name=viewport>
+<title>Luxvs | Loadstring</title>
+<style>
+    :root {
+        --bg: #0d0d0f;
+        --fg: #f0f0f5;
+        --muted: #a0a0b0;
+        --pane: #13101a;
+        --pane2: #0e0b15;
+        --accent: #7c3aed;
+        --accent2: #a855f7;
+        --kw: #a78bfa;
+        --str: #e2b8ff;
+        --com: #6b7280;
+        --num: #c4b5fd;
+        --border: rgba(124,58,237,0.25)
+    }
+
+    * { box-sizing: border-box }
+
+    body {
+        margin: 0;
+        font-family: Roboto, Arial, sans-serif;
+        background-color: var(--bg);
+        color: var(--fg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background-image:
+            radial-gradient(ellipse at 20% 20%, rgba(124,58,237,0.08) 0%, transparent 60%),
+            radial-gradient(ellipse at 80% 80%, rgba(168,85,247,0.06) 0%, transparent 60%)
+    }
+
+    .container {
+        text-align: center;
+        padding: 28px 20px;
+        width: min(860px, 92vw)
+    }
+
+    .brand {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 20px
+    }
+
+    .brand-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        box-shadow: 0 0 20px rgba(124,58,237,0.4)
+    }
+
+    .brand-text {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--fg);
+        margin-top: 10px;
+        letter-spacing: 0.3px
+    }
+
+    .brand-sub {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 3px;
+        letter-spacing: 1px;
+        text-transform: uppercase
+    }
+
+    .editor {
+        position: relative;
+        text-align: left;
+        border-radius: 12px;
+        background: linear-gradient(180deg, var(--pane), var(--pane2));
+        padding: 18px;
+        overflow: auto;
+        box-shadow:
+            inset 0 0 0 1px var(--border),
+            0 0 30px rgba(124,58,237,0.1)
+    }
+
+    .editor-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 14px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border)
+    }
+
+    .dot { width: 10px; height: 10px; border-radius: 50% }
+    .dot-r { background: #ff5f57 }
+    .dot-y { background: #febc2e }
+    .dot-g { background: #28c840 }
+
+    .editor-label {
+        font-size: 11px;
+        color: var(--muted);
+        margin-left: auto;
+        font-family: ui-monospace, monospace;
+        letter-spacing: 0.5px
+    }
+
+    pre { margin: 0; white-space: pre; overflow: auto }
+
+    code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 14px;
+        line-height: 1.7
+    }
+
+    .kw  { color: var(--kw);  font-weight: 600 }
+    .str { color: var(--str) }
+    .com { color: var(--com); font-style: italic }
+    .num { color: var(--num) }
+
+    .copy {
+        margin-left: auto;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: rgba(124,58,237,0.15);
+        color: var(--accent2);
+        padding: 5px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.2s, transform 0.05s
+    }
+
+    .copy:hover { background: rgba(124,58,237,0.3) }
+    .copy:active { transform: scale(.97) }
+
+    .hint {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px
+    }
+
+    .hint::before, .hint::after {
+        content: '';
+        height: 1px;
+        width: 40px;
+        background: var(--border)
+    }
+
+    @media (min-width: 640px) {
+        code { font-size: 15px }
+        .brand-text { font-size: 22px }
+    }
+</style>
+
+<div class=container>
+    <div class=brand>
+        <div class=brand-text>📜 Luxvs Community</div>
+    </div>
+    <div class=editor aria-label="Read-only code editor" role=region>
+        <div class=editor-header>
+            <span class="dot dot-r"></span>
+            <span class="dot dot-y"></span>
+            <span class="dot dot-g"></span>
+            <button aria-label="Copy code" class=copy title=Copy>Copy</button>
+        </div>
+        <pre><code class=lua id=code></code></pre>
+    </div>
+    <div class=hint>Contents can not be displayed on browser &bull; https://louissxe.my.id</div>
+</div>
+
+<script>
+const luaSource = `UserKey = "KEY"; -- A key might be required, if not, delete this line.
+loadstring(game:HttpGet('https://raw.githubusercontent.com/louissxe/Lua/refs/heads/main/LuxvS.lua'))()
+`;
+
+function escapeHTML(e) {
+    return e.replace(/[&<>]/g, e => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[e])
+}
+
+function highlightLua(e) {
+    let t = escapeHTML(e), n = /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, a = [], l = 0, c;
+    for (; c = n.exec(t); )
+        c.index > l && a.push({ t: "code", v: t.slice(l, c.index) }),
+        a.push({ t: "str", v: c[0] }),
+        l = n.lastIndex;
+    l < t.length && a.push({ t: "code", v: t.slice(l) });
+
+    let s = /\b(local|function|end|if|then|else|elseif|for|while|repeat|until|return|not|and|or|do|in|true|false|nil)\b/g,
+        r = /\b(loadstring|game|HttpGet)\b/g,
+        i = /\b(\d+(?:\.\d+)?)\b/g;
+
+    function o(e) {
+        return e.replace(i, "<span class=num>$1</span>")
+                .replace(s, "<span class=kw>$1</span>")
+                .replace(r, "<span class=kw>$1</span>")
+    }
+
+    return a.map(e => "str" === e.t
+        ? "<span class=str>" + e.v + "</span>"
+        : e.v.split("\n").map(e => {
+            let t = e.indexOf("--");
+            if (-1 === t) return o(e);
+            return o(e.slice(0, t)) + "<span class=com>" + e.slice(t) + "</span>"
+        }).join("\n")
+    ).join("")
+}
+
+const codeEl = document.getElementById("code");
+
+function flash(e) {
+    let t = document.querySelector(".copy"), n = t.textContent;
+    t.textContent = e;
+    setTimeout(() => t.textContent = n, 900)
+}
+
+codeEl.innerHTML = highlightLua(luaSource);
+
+document.querySelector(".copy").addEventListener("click", async () => {
+    try {
+        await navigator.clipboard.writeText(luaSource);
+        flash("Copied!")
+    } catch {
+        let e = document.createElement("textarea");
+        e.value = luaSource;
+        document.body.appendChild(e);
+        e.select();
+        try { document.execCommand("copy"); flash("Copied!") } catch {}
+        e.remove()
+    }
+});
+</script>
